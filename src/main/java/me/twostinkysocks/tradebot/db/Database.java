@@ -16,9 +16,10 @@ public class Database {
     Connection connection;
     public String table = "rep";
 
-    public static Database instance = new Database();
+    public static Database instance;
 
-    private Database() {
+    public Database() {
+        instance = this;
         connection = getSQLConnection();
         try {
             Statement s = connection.createStatement();

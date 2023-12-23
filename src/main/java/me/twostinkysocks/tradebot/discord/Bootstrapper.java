@@ -9,11 +9,14 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
+import java.time.Duration;
 import java.util.EnumSet;
 
 public class Bootstrapper {
 
     private static JDA jda = null;
+
+    private static boolean isOn = false;
 
     public static void startup() {
         shutdown();
@@ -33,6 +36,7 @@ public class Bootstrapper {
                jda.awaitReady();
                setupCommands();
                TradeBot.instance.getLogger().info("Successfully started JDA");
+               isOn = true;
            } catch (InterruptedException e) {
                TradeBot.instance.getLogger().severe("Failed to start JDA: error during login");
            }
@@ -62,10 +66,17 @@ public class Bootstrapper {
         TradeBot.instance.getLogger().info("JDA shutting down gracefully...");
         jda.shutdown();
         try {
-            jda.awaitShutdown();
+            jda.awaitShutdown(Duration.ofSeconds(15));
+            jda.shutdownNow();
             TradeBot.instance.getLogger().info("Successfully shut down JDA");
+            isOn = false;
+            jda = null;
         } catch (InterruptedException e) {
             TradeBot.instance.getLogger().severe("JDA failed to gracefully shutdown!");
         }
+    }
+
+    public static boolean isOn() {
+        return isOn;
     }
 }

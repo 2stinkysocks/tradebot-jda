@@ -2,3 +2,12 @@ name: TradeBot
 version: '1.0.0'
 main: me.twostinkysocks.tradebot.TradeBot
 api-version: 1.20
+softdepend: [DiscordSRV, PlaceholderAPI]
+commands:
+  tradebot:
+    description: interact with tradebot
+    permission: tradebot.manage
+permissions:
+  tradebot.manage:
+    description: manage tradebot
+    default: false

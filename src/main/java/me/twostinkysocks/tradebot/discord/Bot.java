@@ -9,12 +9,10 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import java.awt.Color;
+import java.awt.*;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +49,7 @@ public class Bot extends ListenerAdapter {
                     e.getGuild().findMembers(m -> lb.keySet().contains(m.getId())).onSuccess(members -> {
                         String description = "";
                         for(String id : lb.keySet()) {
-                            String line = lb.get(id) + " - " + (Bootstrapper.getJDA().getUserById(id) == null ? Database.instance.getName(id) : Bootstrapper.getJDA().getUserById(id).getAsMention());
+                            String line = lb.get(id) + " - " + (Bootstrapper.getJDA().getUserById(id) == null ? Database.instance.getName(id) : Bootstrapper.getJDA().getUserById(id).getAsMention()) + "\n";
                             description += line;
                         }
                         eb.setDescription(description);
@@ -78,6 +76,7 @@ public class Bot extends ListenerAdapter {
                 EmbedBuilder eb = new EmbedBuilder()
                         .setColor(Color.decode("#4287F5"))
                         .setAuthor("Trade Information")
+                        .setDescription(user.getAsMention())
                         .addField(new MessageEmbed.Field(":white_check_mark: Positive Rep", String.valueOf(pos), true))
                         .addField(new MessageEmbed.Field(":x: Negative Rep", String.valueOf(neg), true));
                 e.getHook().editOriginalEmbeds(eb.build()).queue();
@@ -87,6 +86,74 @@ public class Bot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent e) {
+        String messageContent = e.getMessage().getContentRaw();
+        if(e.getMessage().getChannel().getId().equals(TradeBot.instance.getConfig().getString("positive-channel"))) {
+            Pattern pat = Pattern.compile("^<@\\d{18}> +\\d{1,2}\\/10|^<@!\\d{18}> +\\d{1,2}\\/10|^<@\\d{17}> +\\d{1,2}\\/10|^<@!\\d{17}> +\\d{1,2}\\/10");
+            Matcher matcher = pat.matcher(messageContent);
+            if(!matcher.find()) {
+                e.getMessage().delete().queueAfter(100, TimeUnit.MILLISECONDS);
+                EmbedBuilder eb = new EmbedBuilder()
+                        .setColor(Color.RED)
+                        .setAuthor("Invalid Review Format", null, e.getMessage().getAuthor().getAvatarUrl())
+                        .setTimestamp(Instant.now())
+                        .setDescription("Your review in " + e.getMessage().getChannel().getAsMention() + " has been removed since it was not following the correct format.\n\n>>> " + e.getMessage().getContentDisplay())
+                        .addField(new MessageEmbed.Field("**Please re-write it so that it follows the required format**:\n\n@`[Player's name]` `[#]`/10 `[Any additional info]`\n\nThank you!", "\n\n~Trade Server Staff", false));
+                e.getMessage().getAuthor().openPrivateChannel().flatMap(ch -> ch.sendMessageEmbeds(eb.build())).queue();
+            } else {
+                Pattern pat2 = Pattern.compile("\\d{18}|\\d{17}");
+                Matcher matcher2 = pat2.matcher(messageContent);
+                if(matcher2.find() && matcher2.group().equals(e.getMessage().getAuthor().getId())) {
+                    e.getMessage().delete().queueAfter(100, TimeUnit.MILLISECONDS);
+                    EmbedBuilder eb = new EmbedBuilder()
+                            .setColor(Color.RED)
+                            .setAuthor("Invalid Review Format", null, e.getMessage().getAuthor().getAvatarUrl())
+                            .setTimestamp(Instant.now())
+                            .addField(new MessageEmbed.Field("You cannot give yourself a review!", "\n\n~Trade Server Staff", false));
+                    e.getMessage().getAuthor().openPrivateChannel().flatMap(ch -> ch.sendMessageEmbeds(eb.build())).queue();
+                } else {
+                    Pattern pat3 = Pattern.compile("\\d{18}|\\d{17}");
+                    Matcher matcher3 = pat3.matcher(messageContent);
+                    matcher3.find();
+                    String otherID = matcher3.group();
+                    Database.instance.incrPos(e.getGuild(), otherID);
+                }
+            }
+        } else if(e.getMessage().getChannel().getId().equals(TradeBot.instance.getConfig().getString("negative-channel"))) {
+            Pattern pat = Pattern.compile("^<@\\d{18}> +\\d{1,2}\\/10|^<@!\\d{18}> +\\d{1,2}\\/10|^<@\\d{17}> +\\d{1,2}\\/10|^<@!\\d{17}> +\\d{1,2}\\/10");
+            Matcher matcher = pat.matcher(messageContent);
+            if(!matcher.find()) {
+                pat = Pattern.compile("^.+ +\\d{1,2}\\/10|^<@!\\d{18}> +\\d{1,2}\\/10");
+                matcher = pat.matcher(messageContent);
+                if(!matcher.find()) {
+                    e.getMessage().delete().queueAfter(100, TimeUnit.MILLISECONDS);
+                    EmbedBuilder eb = new EmbedBuilder()
+                            .setColor(Color.RED)
+                            .setAuthor("Invalid Review Format", null, e.getMessage().getAuthor().getAvatarUrl())
+                            .setTimestamp(Instant.now())
+                            .setDescription("Your review in " + e.getMessage().getChannel().getAsMention() + " has been removed since it was not following the correct format.\n\n>>> " + e.getMessage().getContentDisplay())
+                            .addField(new MessageEmbed.Field("**Please re-write it so that it follows the required format**:\n\n@`[Player's name]` `[#]`/10 `[Any additional info]`\n\nThank you!", "\n\n~Trade Server Staff", false));
+                    e.getMessage().getAuthor().openPrivateChannel().flatMap(ch -> ch.sendMessageEmbeds(eb.build())).queue();
+                }
+            } else {
+                pat = Pattern.compile("\\d{18}|\\d{17}");
+                matcher = pat.matcher(messageContent);
+                if(matcher.find() && matcher.group().equals(e.getMessage().getAuthor().getId())) {
+                    e.getMessage().delete().queueAfter(100, TimeUnit.MILLISECONDS);
+                    EmbedBuilder eb = new EmbedBuilder()
+                            .setColor(Color.RED)
+                            .setAuthor("Invalid Review Format", null, e.getMessage().getAuthor().getAvatarUrl())
+                            .setTimestamp(Instant.now())
+                            .addField(new MessageEmbed.Field("You cannot give yourself a review!", "\n\n~Trade Server Staff", false));
+                    e.getMessage().getAuthor().openPrivateChannel().flatMap(ch -> ch.sendMessageEmbeds(eb.build())).queue();
+                } else {
+                    pat = Pattern.compile("\\d{18}|\\d{17}");
+                    matcher = pat.matcher(messageContent);
+                    matcher.find();
+                    String otherID = matcher.group();
+                    Database.instance.incrNeg(e.getGuild(), otherID);
+                }
+            }
+        }
         List<String> channels = (List<String>) TradeBot.instance.getConfig().getList("auction-channels");
         for(String id : channels) {
             if(e.getChannel().getId().equals(id) && !e.getMessage().getAuthor().getId().equals("797951630045478953")) {

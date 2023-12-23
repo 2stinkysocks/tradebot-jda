@@ -1,5 +1,8 @@
+disabled: false
 token: super.secret.token
 auction-channels:
   - "722164004381786212"
   - "770438048819052585"
   - "931511025180745748"
+positive-channel: "1051540144739590234"
+negative-channel: "1051540160405315675"
