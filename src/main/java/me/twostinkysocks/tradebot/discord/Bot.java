@@ -1,18 +1,23 @@
 package me.twostinkysocks.tradebot.discord;
 
+import github.scarsz.discordsrv.DiscordSRV;
 import me.twostinkysocks.tradebot.TradeBot;
 import me.twostinkysocks.tradebot.db.Database;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.bukkit.Bukkit;
 
 import java.awt.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,6 +29,28 @@ public class Bot extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent e) {
         switch(e.getName()) {
+            case "setrep":
+                User userr = e.getOption("user").getAsUser();
+                int poss = e.getOption("pos").getAsInt();
+                int negg = e.getOption("neg").getAsInt();
+                Database.instance.setPosAndNeg(e.getGuild(), userr.getId(), poss, negg);
+                e.reply("Updated " + userr.getName() + "'s rep.").queue();
+                break;
+            case "verify":
+                String discordID = e.getUser().getId();
+                UUID uuid = DiscordSRV.getPlugin().getAccountLinkManager().getUuid(discordID);
+                if(uuid == null) {
+                    e.reply("Your account is not linked! Run `/discord link` ingame and follow the instructions, then run this command again!").setEphemeral(true).queue();
+                } else {
+                    e.reply("Successfully linked your discord account to minecraft account: " + Bukkit.getOfflinePlayer(uuid).getName()).setEphemeral(true).queue();
+                    if(!e.getMember().getRoles().stream().anyMatch(r -> r.getId().equals("862108357509906443"))) {
+                        e.getGuild().addRoleToMember(UserSnowflake.fromId(discordID), Bootstrapper.getJDA().getRoleById("862108357509906443")).queue();
+                    }
+                    if(e.getMember().getRoles().stream().anyMatch(r -> r.getId().equals("862369389907017748"))) {
+                        e.getGuild().removeRoleFromMember(UserSnowflake.fromId(discordID), Bootstrapper.getJDA().getRoleById("862369389907017748")).queue();
+                    }
+                }
+                break;
             case "ping":
                 long time = System.currentTimeMillis();
                 e.reply("Pong!").setEphemeral(true) // reply or acknowledge

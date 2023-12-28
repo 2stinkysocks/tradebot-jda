@@ -3,7 +3,9 @@ package me.twostinkysocks.tradebot.discord;
 import me.twostinkysocks.tradebot.TradeBot;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -57,7 +59,15 @@ public class Bootstrapper {
                         .setGuildOnly(true),
                 Commands.slash("profile", "Display a user's profile")
                         .addOption(OptionType.USER, "user", "The user's profile to view", false)
+                        .setGuildOnly(true),
+                Commands.slash("verify", "Link your discord and minecraft accounts")
+                        .setGuildOnly(true),
+                Commands.slash("setrep", "Set member's reputation")
                         .setGuildOnly(true)
+                        .addOption(OptionType.USER, "user", "The user to set")
+                        .addOption(OptionType.INTEGER, "pos", "Positive Rep")
+                        .addOption(OptionType.INTEGER, "neg", "Negative Rep")
+                        .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR))
         ).queue();
     }
 

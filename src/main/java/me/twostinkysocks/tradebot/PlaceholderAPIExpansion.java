@@ -32,7 +32,7 @@ public class PlaceholderAPIExpansion extends PlaceholderExpansion {
         if(params.equalsIgnoreCase("rep")){
             String discordID = DiscordSRV.getPlugin().getAccountLinkManager().getDiscordId(player.getUniqueId());
             if(discordID == null) {
-                return String.valueOf(-1);
+                return String.valueOf(0);
             }
             int pos = Database.instance.getPos(discordID);
             return String.valueOf(pos);
